@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FlickeringGrid } from '../components/magicui/flickering-grid';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
@@ -74,15 +75,21 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-violet-500/20 rounded-full animate-pulse"></div>
-        <div className="absolute top-40 right-32 w-24 h-24 bg-violet-400/30 rounded-full animate-bounce delay-300"></div>
-        <div className="absolute bottom-32 left-40 w-28 h-28 bg-violet-600/25 rounded-full animate-pulse delay-700"></div>
+        <div className="absolute top-20 left-20 w-32 h-32 bg-white/10 rounded-full animate-pulse"></div>
+        <div className="absolute top-40 right-32 w-24 h-24 bg-violet-400/20 rounded-full animate-bounce delay-300"></div>
+        <div className="absolute bottom-32 left-40 w-28 h-28 bg-white/15 rounded-full animate-pulse delay-700"></div>
         <div className="absolute bottom-20 right-20 w-36 h-36 bg-violet-500/15 rounded-full animate-bounce delay-1000"></div>
       </div>
 
-      {/* Holographic Grid */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="holographic w-full h-full"></div>
+      {/* Flickering Grid Background */}
+      <div className="absolute inset-0 opacity-30 z-0">
+        <FlickeringGrid
+          squareSize={4}
+          gridGap={6}
+          flickerChance={0.3}
+          color="rgb(139, 92, 246)"
+          maxOpacity={0.25}
+          className="w-full h-full" />
       </div>
 
       <motion.div

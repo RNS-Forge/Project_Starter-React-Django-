@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FlickeringGrid } from '../components/magicui/flickering-grid';
 import { Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -218,9 +219,15 @@ const Register: React.FC = () => {
         <div className="absolute bottom-20 right-20 w-36 h-36 bg-violet-500/15 rounded-full animate-bounce delay-1000"></div>
       </div>
 
-      {/* Holographic Grid */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="holographic w-full h-full"></div>
+      {/* Flickering Grid Background */}
+      <div className="absolute inset-0 opacity-30 z-0">
+        <FlickeringGrid
+          squareSize={4}
+          gridGap={6}
+          flickerChance={0.3}
+          color="rgb(139, 92, 246)"
+          maxOpacity={0.25}
+          className="w-full h-full" />
       </div>
 
       <motion.div

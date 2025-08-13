@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { motion } from 'framer-motion';
+import { FlickeringGrid } from '../components/magicui/flickering-grid';
 
 const VerifyEmail: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -51,9 +52,15 @@ const VerifyEmail: React.FC = () => {
           <div className="absolute top-40 right-32 w-24 h-24 bg-violet-400/30 rounded-full animate-bounce delay-300"></div>
           <div className="absolute bottom-32 left-40 w-28 h-28 bg-violet-600/25 rounded-full animate-pulse delay-700"></div>
         </div>
-        {/* Holographic Grid */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="holographic w-full h-full"></div>
+        {/* Flickering Grid Background */}
+        <div className="absolute inset-0 opacity-30 z-0">
+          <FlickeringGrid
+            squareSize={4}
+            gridGap={6}
+            flickerChance={0.3}
+            color="rgb(255, 255, 255)"
+            maxOpacity={0.15}
+            className="w-full h-full" />
         </div>
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -104,9 +111,15 @@ const VerifyEmail: React.FC = () => {
         <div className="absolute bottom-32 left-40 w-28 h-28 bg-violet-600/25 rounded-full animate-pulse delay-700"></div>
         <div className="absolute bottom-20 right-20 w-36 h-36 bg-violet-500/15 rounded-full animate-bounce delay-1000"></div>
       </div>
-      {/* Holographic Grid */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="holographic w-full h-full"></div>
+      {/* Flickering Grid Background */}
+      <div className="absolute inset-0 opacity-30 z-0">
+        <FlickeringGrid
+          squareSize={4}
+          gridGap={6}
+          flickerChance={0.3}
+          color="rgb(255, 255, 255)"
+          maxOpacity={0.15}
+          className="w-full h-full" />
       </div>
       <motion.div
         initial={{ opacity: 0, y: 50, scale: 0.9 }}
@@ -145,14 +158,17 @@ const VerifyEmail: React.FC = () => {
             >
               {success ? 'Email Verified!' : 'Verification Failed'}
             </motion.h2>
-            <motion.p
-              className="text-gray-300 text-lg"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              {message}
-            </motion.p>
+            {/* Only show error message if not successful */}
+            {!success && (
+              <motion.p
+                className="text-gray-300 text-lg"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                {message}
+              </motion.p>
+            )}
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}

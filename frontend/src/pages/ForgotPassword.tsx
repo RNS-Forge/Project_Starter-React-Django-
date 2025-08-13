@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { motion } from 'framer-motion';
+import { FlickeringGrid } from '../components/magicui/flickering-grid';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -37,9 +38,15 @@ const ForgotPassword: React.FC = () => {
         <div className="absolute bottom-32 left-40 w-28 h-28 bg-violet-600/25 rounded-full animate-pulse delay-700"></div>
         <div className="absolute bottom-20 right-20 w-36 h-36 bg-violet-500/15 rounded-full animate-bounce delay-1000"></div>
       </div>
-      {/* Holographic Grid */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="holographic w-full h-full"></div>
+      {/* Flickering Grid Background */}
+      <div className="absolute inset-0 opacity-20 z-0">
+        <FlickeringGrid
+          squareSize={4}
+          gridGap={6}
+          flickerChance={0.3}
+          color="rgb(255, 255, 255)"
+          maxOpacity={0.15}
+          className="w-full h-full" />
       </div>
       <motion.div
         initial={{ opacity: 0, y: 50, scale: 0.9 }}

@@ -118,7 +118,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const verifyEmail = async (token: string) => {
     try {
-      const response = await authAPI.verifyEmail(token);
+      const response = await authAPI.verifyEmailToken(token);
       if (response.token && response.user) {
         setToken(response.token);
         setUser(response.user);

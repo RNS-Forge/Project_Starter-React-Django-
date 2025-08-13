@@ -123,7 +123,7 @@ def send_verification_email(email, token, user_name):
                 </div>
                 <p>If you can't click the button above, copy and paste this link into your browser:</p>
                 <p style="word-break: break-all; color: #007bff;">{verification_link}</p>
-                <p>This verification link will expire in 24 hours.</p>
+                <p>This verification link will expire in 15 minutes.</p>
                 <p>If you didn't create an account with us, please ignore this email.</p>
                 <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
                 <p style="color: #666; font-size: 12px;">This is an automated message, please do not reply.</p>
@@ -141,7 +141,7 @@ def send_verification_email(email, token, user_name):
         
         {verification_link}
         
-        This verification link will expire in 24 hours.
+        This verification link will expire in 15 minutes.
         
         If you didn't create an account with us, please ignore this email.
         """
@@ -288,9 +288,9 @@ def register_user(request):
                     status=status.HTTP_409_CONFLICT
                 )
 
-            # Generate verification token
+            # Generate verification token (expires in 15 minutes)
             verification_token = generate_verification_token()
-            verification_expires = datetime.utcnow() + timedelta(hours=24)
+            verification_expires = datetime.utcnow() + timedelta(minutes=15)
 
             # Create new user document
             user_data = {
@@ -448,6 +448,95 @@ def verify_email(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def verify_email_token(request, token):
+    """
+    Verify user email with token from URL parameter.
+    """
+    try:
+        if not token:
+            return Response(
+                {'error': 'Verification token is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get MongoDB connection
+        client, db, collection = get_mongo_client()
+        if collection is None:
+            return Response(
+                {'error': 'Database connection failed'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        try:
+            # Find user by verification token
+            user = collection.find_one({
+                'verification_token': token,
+                'verification_expires': {'$gt': datetime.utcnow()}
+            })
+
+            if not user:
+                return Response(
+                    {'error': 'Invalid or expired verification token'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Update user to verified and active
+            collection.update_one(
+                {'_id': user['_id']},
+                {
+                    '$set': {
+                        'is_verified': True,
+                        'is_active': True,
+                        'updated_at': datetime.utcnow()
+                    },
+                    '$unset': {
+                        'verification_token': "",
+                        'verification_expires': ""
+                    }
+                }
+            )
+
+            # Generate JWT token
+            user['is_verified'] = True
+            user['is_active'] = True
+            token_jwt = generate_jwt_token(user)
+
+            # Prepare response data
+            user_response = {
+                'id': str(user['_id']),
+                'first_name': user['first_name'],
+                'last_name': user['last_name'],
+                'email': user['email'],
+                'is_verified': True,
+                'created_at': user['created_at'].isoformat()
+            }
+
+            return Response(
+                {
+                    'message': 'Email verified successfully',
+                    'token': token_jwt,
+                    'user': user_response
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except PyMongoError as e:
+            return Response(
+                {'error': f'Database operation failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        finally:
+            client.close()
+
+    except Exception as e:
+        print(f"Unexpected error during email verification: {str(e)}")
+        return Response(
+            {'error': 'An unexpected error occurred. Please try again later.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def resend_verification(request):
@@ -491,9 +580,9 @@ def resend_verification(request):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Generate new verification token
+            # Generate new verification token (expires in 15 minutes)
             verification_token = generate_verification_token()
-            verification_expires = datetime.utcnow() + timedelta(hours=24)
+            verification_expires = datetime.utcnow() + timedelta(minutes=15)
 
             # Update user with new verification token
             collection.update_one(
