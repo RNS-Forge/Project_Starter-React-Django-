@@ -9,9 +9,17 @@ import VerifyEmail from './pages/VerifyEmail';
 import Home from './pages/Home';
 import './App.css';
 
+import loginbg from "./assets/loginbg.svg";
+
 function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-black-secondary to-black-accent">
+    <div className="min-h-screen">
+      <img
+        src={loginbg || "../../assets/loginbg.svg"}
+        alt="Login background"
+        className="absolute inset-0 w-full h-full object-cover -z-5"
+      />
+        
       <div className="cyber-grid min-h-screen">
         <AuthProvider>
           <Router>
