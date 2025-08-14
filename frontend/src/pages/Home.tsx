@@ -80,28 +80,8 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden py-8 bg-yellow-50">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-yellow-500/20 rounded-full animate-pulse"></div>
-        <div className="absolute top-40 right-32 w-24 h-24 bg-yellow-400/30 rounded-full animate-bounce delay-300"></div>
-        <div className="absolute bottom-32 left-40 w-28 h-28 bg-yellow-600/25 rounded-full animate-pulse delay-700"></div>
-        <div className="absolute bottom-20 right-20 w-36 h-36 bg-yellow-500/15 rounded-full animate-bounce delay-1000"></div>
-      </div>
-
-      {/* Flickering Grid Background */}
-      <div className="absolute inset-0 opacity-20 z-0">
-        <FlickeringGrid
-          squareSize={4}
-          gridGap={6}
-          flickerChance={0.3}
-          color="rgb(234, 179, 8)"
-          maxOpacity={0.15}
-          className="w-full h-full"
-        />
-      </div>
-
-      
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden py-8 ">
+     
         <div className="card-primary bg-white rounded-lg border border-gray-300 shadow-xl p-8 space-y-8">
           {/* Header */}
           <motion.div

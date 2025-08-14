@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { FlickeringGrid } from "../components/magicui/flickering-grid";
 import { Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
-// Image assets
+// Image assets (use your actual image imports)
 import loginScattered11 from "../assets/LoginImg1.png";
 import loginScattered22 from "../assets/LoginImg2.png";
 import loginScattered33 from "../assets/LoginImg3.png";
+
+type PasswordStrength = "Weak" | "Medium" | "Strong" | "Very Strong" | "";
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -22,9 +23,7 @@ const Register: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState<
-    "Weak" | "Medium" | "Strong" | "Very Strong" | ""
-  >("");
+  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>("");
   const [passwordFeedback, setPasswordFeedback] = useState<string[]>([]);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -34,23 +33,21 @@ const Register: React.FC = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const images = [loginScattered11, loginScattered22, loginScattered33];
 
+  // Image slider effect
   useEffect(() => {
     const slideInterval = setInterval(() => {
       if (!isTransitioning) {
         setIsTransitioning(true);
-        setCurrentImageIndex((prev) =>
-          prev === images.length - 1 ? 0 : prev + 1
-        );
+        setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
         setTimeout(() => setIsTransitioning(false), 1000);
       }
     }, 4000);
     return () => clearInterval(slideInterval);
   }, [isTransitioning, images.length]);
 
-  // FIXED: handleChange now supports checkbox and text inputs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    if (name === "terms" || name === "acceptedTerms") {
+    if (name === "terms") {
       setAcceptedTerms(checked);
       if (errors.terms) {
         setErrors((prev) => ({ ...prev, terms: "" }));
@@ -87,7 +84,7 @@ const Register: React.FC = () => {
     else feedback.push("Special character");
     if (password.length >= 12) score++;
     if (/[^a-zA-Z0-9]/.test(password) && password.length >= 16) score++;
-    
+
     if (score <= 2) setPasswordStrength("Weak");
     else if (score === 3) setPasswordStrength("Medium");
     else if (score === 4 || score === 5) setPasswordStrength("Strong");
@@ -97,7 +94,7 @@ const Register: React.FC = () => {
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!acceptedTerms) {
       newErrors.terms = "You must accept the Terms and Conditions";
     }
@@ -135,7 +132,7 @@ const Register: React.FC = () => {
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -143,12 +140,13 @@ const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    
+
     setLoading(true);
     setErrors({});
-    
+
     try {
-      const response = await fetch("/api/auth/register/", {
+      // Use the full backend URL for local development
+      const response = await fetch("http://localhost:8000/api/auth/register/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -160,38 +158,33 @@ const Register: React.FC = () => {
           password: formData.password,
         }),
       });
-      
-      const result = await response.json();
-      
+
+      let result: { error?: string; message?: string } = {};
+      try {
+        result = await response.json();
+      } catch {
+        setErrors({ general: "Server error. Please try again later." });
+        setLoading(false);
+        return;
+      }
+
       if (response.ok) {
         setSuccess(true);
       } else {
         setErrors({
-          general: result.error || result.message || "Registration failed.",
+          general: result.error ?? result.message ?? "Registration failed.",
         });
       }
-    } catch  {
-      setErrors({ general: "An unexpected error occurred. Please try again." });
+    } catch {
+      setErrors({ general: "Network error. Please check your connection and try again." });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative p-4 ">
-      {/* Flickering grid background */}
-      <div className="absolute inset-0 opacity-30 z-0">
-        <FlickeringGrid
-          squareSize={4}
-          gridGap={6}
-          flickerChance={0.3}
-          color="rgb(234, 179, 8)"
-          maxOpacity={0.25}
-          className="w-full h-full"
-        />
-      </div>
-
-      {/* Main container with form on left and image slider on right */}
+    <div className="min-h-screen flex items-center justify-center relative p-4 bg-gradient-to-br">
+      {/* Main container */}
       <div className="flex flex-col lg:flex-row bg-white rounded-lg border border-gray-300 shadow-xl w-full max-w-5xl overflow-hidden">
         {/* Register Form Section */}
         <div className="w-full lg:w-1/2 px-10 py-14 overflow-y-auto max-h-[90vh]">
@@ -202,9 +195,7 @@ const Register: React.FC = () => {
               </h2>
               <p className="text-gray-700">
                 We've sent a verification email to{" "}
-                <span className="font-semibold">{formData.email}</span>. Please
-                check your inbox and click the verification link to activate your
-                account.
+                <span className="font-semibold">{formData.email}</span>. Please check your inbox and click the verification link to activate your account.
               </p>
               <Link
                 to="/login"
@@ -223,9 +214,7 @@ const Register: React.FC = () => {
               noValidate
             >
               <div className="text-center">
-                <h1 className="text-4xl font-bold text-yellow-500 mb-2">
-                  Sign Up
-                </h1>
+                <h1 className="text-4xl font-bold text-yellow-500 mb-2">Sign Up</h1>
                 <p className="text-gray-600 text-lg">Create your account</p>
                 <p className="text-gray-500 text-sm mt-2">
                   Already have an account?{" "}
@@ -265,9 +254,7 @@ const Register: React.FC = () => {
                     placeholder="First name"
                   />
                   {errors.first_name && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.first_name}
-                    </p>
+                    <p className="text-red-500 text-sm mt-1">{errors.first_name}</p>
                   )}
                 </div>
                 <div>
@@ -289,9 +276,7 @@ const Register: React.FC = () => {
                     placeholder="Last name"
                   />
                   {errors.last_name && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.last_name}
-                    </p>
+                    <p className="text-red-500 text-sm mt-1">{errors.last_name}</p>
                   )}
                 </div>
               </div>
@@ -315,9 +300,7 @@ const Register: React.FC = () => {
                   }`}
                   placeholder="Enter your email"
                 />
-                {errors.email && (
-                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                )}
+                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
               </div>
 
               {/* Password */}
@@ -380,7 +363,7 @@ const Register: React.FC = () => {
                               ? "100%"
                               : "0%",
                         }}
-                      ></div>
+                      />
                     </div>
                     <div className="text-xs mt-1 flex items-center">
                       <span
@@ -406,9 +389,7 @@ const Register: React.FC = () => {
                     </div>
                   </div>
                 )}
-                {errors.password && (
-                  <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-                )}
+                {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
               </div>
 
               {/* Confirm Password */}
@@ -438,17 +419,13 @@ const Register: React.FC = () => {
                     tabIndex={-1}
                     className="absolute right-3 top-2.5 text-gray-400 hover:text-yellow-500 focus:outline-none"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    aria-label={
-                      showConfirmPassword ? "Hide password" : "Show password"
-                    }
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                   >
                     {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.confirmPassword}
-                  </p>
+                  <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
                 )}
               </div>
 
@@ -473,9 +450,7 @@ const Register: React.FC = () => {
                   </button>
                 </label>
               </div>
-              {errors.terms && (
-                <p className="text-red-500 text-sm mt-1">{errors.terms}</p>
-              )}
+              {errors.terms && <p className="text-red-500 text-sm mt-1">{errors.terms}</p>}
 
               {/* Submit button */}
               <button
@@ -489,13 +464,13 @@ const Register: React.FC = () => {
           )}
         </div>
 
-        {/* Image slider section on right side */}
+        {/* Image slider section */}
         <div className="hidden lg:flex flex-1 justify-center items-center p-8 bg-white">
           <div className="relative w-full h-full min-h-[600px] overflow-hidden rounded-lg">
             {images.map((img, index) => (
               <img
                 key={index}
-                src={img || "/placeholder.svg"}
+                src={img}
                 alt={`Slide ${index + 1}`}
                 className="absolute inset-0 w-full h-full object-contain transition-all duration-1000 ease-in-out"
                 style={{
@@ -511,34 +486,25 @@ const Register: React.FC = () => {
 
       {/* Terms and conditions modal */}
       {showTermsModal && (
-        <div className="fixed inset-0 z-50 bg-yellow-50/90 backdrop-blur-sm flex flex-col items-center justify-center p-8">
+        <div className="fixed inset-0 z-50 bg-yellow-50/60 backdrop-blur-sm flex flex-col items-center justify-center p-8">
           <div className="bg-white rounded-lg shadow-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto p-8">
             <h2 className="text-4xl font-extrabold mb-6 text-yellow-600 text-center">
               Terms and Conditions
             </h2>
             <section className="mb-6">
-              <h5 className="text-xl font-bold text-yellow-500 mb-2">
-                1. Acceptance of Terms
-              </h5>
+              <h5 className="text-xl font-bold text-yellow-500 mb-2">1. Acceptance of Terms</h5>
               <p>
-                By creating an account, you agree to abide by all rules and
-                policies set forth by our platform. If you do not agree, please
-                do not register.
+                By creating an account, you agree to abide by all rules and policies set forth by our platform. If you do not agree, please do not register.
               </p>
             </section>
             <section className="mb-6">
-              <h5 className="text-xl font-bold text-yellow-500 mb-2">
-                2. Eligibility
-              </h5>
+              <h5 className="text-xl font-bold text-yellow-500 mb-2">2. Eligibility</h5>
               <p>
-                You must be at least 18 years old to use this service. By
-                registering, you confirm that you meet this requirement.
+                You must be at least 18 years old to use this service. By registering, you confirm that you meet this requirement.
               </p>
             </section>
             <section className="mb-6">
-              <h5 className="text-xl font-bold text-yellow-500 mb-2">
-                3. User Conduct
-              </h5>
+              <h5 className="text-xl font-bold text-yellow-500 mb-2">3. User Conduct</h5>
               <ul className="list-disc pl-6 space-y-1">
                 <li>No spamming, harassment, or abusive language.</li>
                 <li>Do not upload or share illegal, harmful, or offensive content.</li>
@@ -547,48 +513,32 @@ const Register: React.FC = () => {
               </ul>
             </section>
             <section className="mb-6">
-              <h5 className="text-xl font-bold text-yellow-500 mb-2">
-                4. Privacy & Data
-              </h5>
+              <h5 className="text-xl font-bold text-yellow-500 mb-2">4. Privacy & Data</h5>
               <p>
                 Your data is handled according to our{" "}
-                <span className="text-yellow-600">Privacy Policy</span>. We use
-                industry-standard security to protect your information. We do not
-                sell your data to third parties.
+                <span className="text-yellow-600">Privacy Policy</span>. We use industry-standard security to protect your information. We do not sell your data to third parties.
               </p>
             </section>
             <section className="mb-6">
-              <h5 className="text-xl font-bold text-yellow-500 mb-2">
-                5. Account Termination
-              </h5>
+              <h5 className="text-xl font-bold text-yellow-500 mb-2">5. Account Termination</h5>
               <p>
-                We reserve the right to suspend or terminate accounts for
-                violations of these terms, or for any activity deemed harmful to
-                the community or platform.
+                We reserve the right to suspend or terminate accounts for violations of these terms, or for any activity deemed harmful to the community or platform.
               </p>
             </section>
             <section className="mb-6">
-              <h5 className="text-xl font-bold text-yellow-500 mb-2">
-                6. Limitation of Liability
-              </h5>
+              <h5 className="text-xl font-bold text-yellow-500 mb-2">6. Limitation of Liability</h5>
               <p>
-                We are not liable for any damages or losses resulting from your
-                use of the platform. Use the service at your own risk.
+                We are not liable for any damages or losses resulting from your use of the platform. Use the service at your own risk.
               </p>
             </section>
             <section className="mb-6">
-              <h5 className="text-xl font-bold text-yellow-500 mb-2">
-                7. Changes to Terms
-              </h5>
+              <h5 className="text-xl font-bold text-yellow-500 mb-2">7. Changes to Terms</h5>
               <p>
-                We may update these Terms and Conditions at any time. Continued
-                use of the service constitutes acceptance of the new terms.
+                We may update these Terms and Conditions at any time. Continued use of the service constitutes acceptance of the new terms.
               </p>
             </section>
             <section className="mb-6">
-              <h5 className="text-xl font-bold text-yellow-500 mb-2">
-                8. Contact
-              </h5>
+              <h5 className="text-xl font-bold text-yellow-500 mb-2">8. Contact</h5>
               <p>
                 For questions or support, contact us at{" "}
                 <span className="text-yellow-600">support@example.com</span>.
