@@ -16,6 +16,7 @@ interface AuthContextType {
   resendVerification: (email: string) => Promise<{ success: boolean; message: string }>;
   forgotPassword: (email: string) => Promise<{ success: boolean; message: string }>;
   resetPassword: (token: string, password: string) => Promise<{ success: boolean; message: string }>;
+  googleLogin: (credential: string) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -166,6 +167,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const googleLogin = async (credential: string) => {
+    try {
+      setIsLoading(true);
+      const response = await authAPI.googleLogin(credential);
+      
+      // Store in cookies
+      const expires = 7; // 7 days
+      Cookies.set('token', response.token, { expires });
+      Cookies.set('user', JSON.stringify(response.user), { expires });
+      
+      setToken(response.token);
+      setUser(response.user);
+      
+      return { success: true, message: response.message };
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { error?: string } } };
+      const errorMessage = axiosError?.response?.data?.error || 'Google authentication failed';
+      return { success: false, message: errorMessage };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     token,
@@ -178,6 +202,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     resendVerification,
     forgotPassword,
     resetPassword,
+    googleLogin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

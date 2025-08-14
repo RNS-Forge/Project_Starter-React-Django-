@@ -12,4 +12,7 @@ urlpatterns = [
     path('auth/forgot-password/', views.forgot_password, name='forgot_password'),
     path('auth/reset-password/', views.reset_password, name='reset_password'),
     path('auth/profile/', views.get_user_profile, name='user_profile'),
+    
+    # Google OAuth endpoints
+    path('auth/google/', views.google_oauth_login, name='google_oauth_login'),
 ]

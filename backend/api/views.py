@@ -1044,3 +1044,150 @@ def get_user_profile(request):
             {'error': 'An unexpected error occurred. Please try again later.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+# Google OAuth Views
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
+from django.conf import settings
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def google_oauth_login(request):
+    """Handle Google OAuth login/signup"""
+    try:
+        data = json.loads(request.body)
+        credential = data.get('credential')
+        
+        if not credential:
+            return Response(
+                {'error': 'Google credential is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Verify the Google token
+            idinfo = id_token.verify_oauth2_token(
+                credential, 
+                google_requests.Request(), 
+                settings.GOOGLE_OAUTH_CLIENT_ID
+            )
+            
+            # Check if the token is valid
+            if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+                return Response(
+                    {'error': 'Invalid token issuer'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid token: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Extract user information from Google
+        google_user_id = idinfo['sub']
+        email = idinfo['email']
+        first_name = idinfo.get('given_name', '')
+        last_name = idinfo.get('family_name', '')
+        picture = idinfo.get('picture', '')
+        email_verified = idinfo.get('email_verified', False)
+
+        # Connect to MongoDB
+        client, db, collection = get_mongo_client()
+        if collection is None:
+            return Response(
+                {'error': 'Database connection failed'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        try:
+            # Check if user already exists with this email
+            existing_user = collection.find_one({'email': email.lower()})
+            
+            if existing_user:
+                # User exists, update Google info and login
+                update_data = {
+                    'google_id': google_user_id,
+                    'picture': picture,
+                    'last_login': datetime.utcnow(),
+                    'is_verified': True  # Google accounts are pre-verified
+                }
+                
+                collection.update_one(
+                    {'_id': existing_user['_id']},
+                    {'$set': update_data}
+                )
+                
+                user_id = str(existing_user['_id'])
+                
+            else:
+                # Create new user
+                user_data = {
+                    '_id': ObjectId(),
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'email': email.lower(),
+                    'google_id': google_user_id,
+                    'picture': picture,
+                    'is_verified': True,  # Google accounts are pre-verified
+                    'created_at': datetime.utcnow(),
+                    'last_login': datetime.utcnow(),
+                    'password_hash': None,  # No password for OAuth users
+                    'verification_token': None,
+                    'verification_token_expires': None,
+                    'reset_token': None,
+                    'reset_token_expires': None
+                }
+                
+                collection.insert_one(user_data)
+                user_id = str(user_data['_id'])
+
+            # Generate JWT token
+            payload = {
+                'user_id': user_id,
+                'email': email,
+                'exp': datetime.utcnow() + JWT_EXPIRATION_DELTA
+            }
+            token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+
+            # Get updated user data
+            user = collection.find_one({'_id': ObjectId(user_id)})
+            
+            user_response = {
+                'id': str(user['_id']),
+                'first_name': user['first_name'],
+                'last_name': user['last_name'],
+                'email': user['email'],
+                'picture': user.get('picture', ''),
+                'is_verified': user.get('is_verified', False),
+                'created_at': user['created_at'].isoformat() if user.get('created_at') else None,
+                'last_login': user['last_login'].isoformat() if user.get('last_login') else None
+            }
+
+            return Response({
+                'token': token,
+                'user': user_response,
+                'message': 'Successfully logged in with Google'
+            }, status=status.HTTP_200_OK)
+
+        except PyMongoError as e:
+            return Response(
+                {'error': f'Database operation failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        finally:
+            client.close()
+
+    except json.JSONDecodeError:
+        return Response(
+            {'error': 'Invalid JSON format'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    except Exception as e:
+        print(f"Unexpected error in Google OAuth: {str(e)}")
+        return Response(
+            {'error': 'An unexpected error occurred. Please try again later.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

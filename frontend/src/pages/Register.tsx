@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import GoogleSignInButton from "../components/GoogleSignInButton";
+import { useNavigate } from "react-router-dom";
 
 // Image assets (use your actual image imports)
 import loginScattered11 from "../assets/LoginImg1.png";
@@ -11,6 +13,7 @@ import loginScattered33 from "../assets/LoginImg3.png";
 type PasswordStrength = "Weak" | "Medium" | "Strong" | "Very Strong" | "";
 
 const Register: React.FC = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -460,6 +463,24 @@ const Register: React.FC = () => {
               >
                 {loading ? "Creating Account..." : "Create Account"}
               </button>
+              
+              {/* Divider */}
+              <div className="flex items-center my-4">
+                <div className="flex-1 border-t border-gray-300"></div>
+                <span className="px-3 text-gray-500 text-sm">OR</span>
+                <div className="flex-1 border-t border-gray-300"></div>
+              </div>
+                               
+              {/* Google Sign Up Button */}
+              <GoogleSignInButton
+                onSuccess={() => navigate("/home")}
+                onError={(error) => {
+                  setErrors({ general: error });
+                }}
+                text="signup_with"
+                theme="outline"
+                size="large"
+              />
             </motion.form>
           )}
         </div>
